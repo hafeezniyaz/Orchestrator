@@ -19,6 +19,10 @@ using Orchestrator.Application.Features.Packages.Interfaces;
 using Orchestrator.Infrastructure.Features.Packages.Services;
 using Orchestrator.Application.Features.Heartbeat.Interfaces;
 using Orchestrator.Infrastructure.Features.Heartbeat.Services;
+using Orchestrator.Application.Features.Logs.Interfaces;
+using Orchestrator.Infrastructure.Features.Logs.Services;
+using Orchestrator.Application.Features.Configs.Interfaces;
+using Orchestrator.Infrastructure.Features.Configs.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +73,8 @@ builder.Services.AddSingleton<ISecretHasher, SecretHasher>();
 builder.Services.AddScoped<IAppService, AppService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<IHeartbeatService, HeartbeatService>();
+builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddScoped<IConfigService, ConfigService>();
 builder.Services.AddHostedService<HeartbeatMonitorService>(); //signleton
 
 // Add both authentication schemes
