@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Orchestrator.Domain.Entities
+{
+    /// <summary>
+    /// Represents a managed application, which acts as a container for packages.
+    /// </summary>
+    public class App : BaseEntity
+    {
+        public required string Name { get; set; }
+        public string? Description { get; set; }
+        public bool IsActive { get; set; }
+    }
+}
+ 
