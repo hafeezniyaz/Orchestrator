@@ -2,10 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Orchestrator.Infrastructure.Persistence;
 using Serilog;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using Orchestrator.Application.Common.Interfaces;
 using Orchestrator.Infrastructure.Authentication;
 using Orchestrator.Infrastructure.Services;
+using Orchestrator.Infrastructure.Authorization;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Orchestrator.Application.Features.Apps.Interfaces;
@@ -56,34 +59,45 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 
+//claims transformation for AD groups
+builder.Services.AddScoped<IClaimsTransformation, ADGroupRoleTransformation>();
+
+//secret hasher
+builder.Services.AddSingleton<ISecretHasher, SecretHasher>();
+
 //feature services
 builder.Services.AddScoped<IAppService, AppService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<IHeartbeatService, HeartbeatService>();
 builder.Services.AddHostedService<HeartbeatMonitorService>(); //signleton
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+// Add both authentication schemes
+builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+    .AddNegotiate() // For Windows Auth
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"]!))
-    };
-});
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"]!))
+        };
+    }); // For OAuth2
 
-//authorization
-builder.Services.AddAuthorization();
+// Configure authorization to use both schemes
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder(
+        NegotiateDefaults.AuthenticationScheme,
+        JwtBearerDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 //add controllers
 builder.Services.AddControllers();

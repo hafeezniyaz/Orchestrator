@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration; // <-- Add this
 using Orchestrator.API.Models;
 using Orchestrator.Application.Common.Interfaces;
+using Orchestrator.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using System.Text;
 
 namespace Orchestrator.API.Controllers;
@@ -15,17 +17,20 @@ public class ConnectController : ControllerBase
 {
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IConfiguration _configuration;
+    private readonly ISecretHasher _secretHasher;
+    private readonly OrchestratorDbContext _dbContext;
 
-    // Inject IConfiguration
-    public ConnectController(IJwtTokenGenerator jwtTokenGenerator, IConfiguration configuration)
+    public ConnectController(IJwtTokenGenerator jwtTokenGenerator, IConfiguration configuration, ISecretHasher secretHasher, OrchestratorDbContext dbContext)
     {
         _jwtTokenGenerator = jwtTokenGenerator;
         _configuration = configuration;
+        _secretHasher = secretHasher;
+        _dbContext = dbContext;
     }
 
     [HttpPost("token")]
     [AllowAnonymous]
-    public IActionResult GetToken([FromForm] TokenRequestModel request)
+    public async Task<IActionResult> GetToken([FromForm] TokenRequestModel request)
     {
         
         string? generatedToken = null;
@@ -52,6 +57,7 @@ public class ConnectController : ControllerBase
 
         if (request.Granttype == "password")
         {
+            // Keep existing password flow for backward compatibility
             if (request.username == "admin" && request.Password == "password")
             {
                 var roles = new[] { "User" };
@@ -61,11 +67,21 @@ public class ConnectController : ControllerBase
         } 
         else if (request.Granttype == "client_credentials")
         {
-            if (clientId == "cicd-pipeline" && clientSecret == "super-secret-client-key")
+            // Use database-backed client credentials validation
+            if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret))
             {
-                var clientIdAsGuid = new Guid("b2c3d4e5-f6a7-8901-2345-67890abcdef1");
-                var roles = new[] { "Administrator" };
-                generatedToken = _jwtTokenGenerator.GenerateToken(clientIdAsGuid, clientId, roles);
+                var client = await _dbContext.ApiClients
+                    .FirstOrDefaultAsync(c => c.ClientId == clientId && c.IsActive);
+                
+                if (client != null && _secretHasher.VerifySecret(clientSecret, client.HashedClientSecret))
+                {
+                    // Parse roles from comma-separated string
+                    var roles = client.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                           .Select(r => r.Trim())
+                                           .ToArray();
+                    
+                    generatedToken = _jwtTokenGenerator.GenerateToken(client.Id, client.ClientName, roles);
+                }
             }
         }
 
