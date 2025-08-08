@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Orchestrator.Domain.Entities;
+using Orchestrator.Application.Common.Interfaces;
 
 namespace Orchestrator.Infrastructure.Persistence
 {
@@ -14,11 +15,14 @@ namespace Orchestrator.Infrastructure.Persistence
     /// </summary>
     public class OrchestratorDbContext: DbContext
     {
+        private readonly ICurrentUserProvider? _currentUserProvider;
+
         // This constructor is essential. It allows the dependency injection container
         // in our API project to pass in configuration, like the database connection string.
-        public OrchestratorDbContext(DbContextOptions<OrchestratorDbContext> options)
+        public OrchestratorDbContext(DbContextOptions<OrchestratorDbContext> options, ICurrentUserProvider? currentUserProvider = null)
             : base(options)
         {
+            _currentUserProvider = currentUserProvider;
         }
 
         public DbSet<App> Apps { get; set; }
@@ -29,5 +33,6 @@ namespace Orchestrator.Infrastructure.Persistence
         public DbSet<Config> Configs { get; set; }
         public DbSet<ConfigAsset> ConfigAssets { get; set; }
         public DbSet<WebhookSubscription> WebhookSubscriptions { get; set; }
+        public DbSet<ApiClient> ApiClients { get; set; }
     }
 }

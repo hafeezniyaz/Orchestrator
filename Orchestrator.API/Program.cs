@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Orchestrator.Application.Common.Interfaces;
 using Orchestrator.Infrastructure.Authentication;
+using Orchestrator.Infrastructure.Services;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Orchestrator.Application.Features.Apps.Interfaces;
@@ -50,6 +51,10 @@ builder.Services.AddDbContext<OrchestratorDbContext>(options =>
 
 //authentication
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+//current user service
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 
 //feature services
 builder.Services.AddScoped<IAppService, AppService>();
