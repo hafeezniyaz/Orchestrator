@@ -10,7 +10,7 @@ namespace Orchestrator.Domain.Entities
     /// Represents a single key-value pair within a Config container.
     /// The value is stored as a JSON string to allow for complex objects.
     /// </summary>
-    public class ConfigAsset: BaseEntity
+    public class ConfigAsset: AuditableEntity
     {
         public Guid ConfigId { get; set; }
         public required string Key { get; set; }

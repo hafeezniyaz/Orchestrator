@@ -46,17 +46,31 @@ namespace Orchestrator.Infrastructure.Features.Apps.Services
             };
         }
 
-        public async Task<IEnumerable<AppDto>> GetAllAppsAsync()
+        public async Task<IEnumerable<AppDto>> GetAllAppsAsync(string? name = null, bool? isActive = null, int skip = 0, int top = 100)
         {
-            return await _context.Apps
-             .Select(app => new AppDto
-             {
-                 Id = app.Id,
-                 Name = app.Name,
-                 Description = app.Description,
-                 IsActive = app.IsActive
-             })
-             .ToListAsync();
+            var query = _context.Apps.AsQueryable();
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                query = query.Where(a => a.Name.Contains(name));
+            }
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(a => a.IsActive == isActive.Value);
+            }
+
+            return await query
+                .Skip(skip)
+                .Take(top)
+                .Select(app => new AppDto
+                {
+                    Id = app.Id,
+                    Name = app.Name,
+                    Description = app.Description,
+                    IsActive = app.IsActive
+                })
+                .ToListAsync();
         }
 
         public async Task<AppDto?> GetAppByIdAsync(Guid appId)

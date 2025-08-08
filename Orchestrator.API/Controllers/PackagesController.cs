@@ -19,13 +19,20 @@ public class PackagesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> ListPackagesForApp(Guid appId)
+    [Authorize(Roles = "User,Administrator,View,Publisher")]
+    public async Task<IActionResult> ListPackagesForApp(
+        Guid appId,
+        [FromQuery] string? version,
+        [FromQuery] bool? isActive,
+        [FromQuery] int skip = 0,
+        [FromQuery] int top = 100)
     {
-        var packages = await _packageService.GetPackagesForAppAsync(appId);
+        var packages = await _packageService.GetPackagesForAppAsync(appId, version, isActive, skip, top);
         return Ok(packages);
     }
 
     [HttpGet("{version}")]
+    [Authorize(Roles = "User,Administrator,View,Publisher")]
     public IActionResult GetPackageByVersion(Guid appId, string version)
     {
         // We will implement the real service logic for this in a later task.
@@ -35,6 +42,7 @@ public class PackagesController : ControllerBase
 
 
     [HttpGet("{version}/download")]
+    [Authorize(Roles = "User,Administrator,View,Publisher")]
     public async Task<IActionResult> DownloadPackage(Guid appId, string version)
     {
         // 1. Get the file path from our service

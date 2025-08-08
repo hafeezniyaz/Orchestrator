@@ -9,7 +9,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents a versioned, deployable package associated with an App.
     /// </summary>
-    public class Package : BaseEntity
+    public class Package : AuditableEntity
     {
         public Guid AppId { get; set; }
         public required string Version { get; set; }
