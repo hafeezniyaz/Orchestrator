@@ -9,7 +9,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents a managed application, which acts as a container for packages.
     /// </summary>
-    public class App : BaseEntity
+    public class App : AuditableEntity
     {
         public required string Name { get; set; }
         public string? Description { get; set; }

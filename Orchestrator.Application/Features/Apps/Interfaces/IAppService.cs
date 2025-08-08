@@ -10,10 +10,14 @@ namespace Orchestrator.Application.Features.Apps.Interfaces
     public interface IAppService
     {
         /// <summary>
-        /// Retrieves a list of all applications.
+        /// Retrieves a list of all applications with optional filtering and pagination.
         /// </summary>
+        /// <param name="name">Optional filter by application name (contains)</param>
+        /// <param name="isActive">Optional filter by active status</param>
+        /// <param name="skip">Number of items to skip for pagination</param>
+        /// <param name="top">Number of items to take for pagination</param>
         /// <returns>A list of application DTOs.</returns>
-        Task<IEnumerable<AppDto>> GetAllAppsAsync();
+        Task<IEnumerable<AppDto>> GetAllAppsAsync(string? name = null, bool? isActive = null, int skip = 0, int top = 100);
 
         /// <summary>
         /// Retrieves a specific application by its ID.

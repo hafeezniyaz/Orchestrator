@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Orchestrator.Domain.Entities;
+using Orchestrator.Application.Common.Interfaces;
 
 namespace Orchestrator.Infrastructure.Persistence
 {
@@ -14,11 +15,14 @@ namespace Orchestrator.Infrastructure.Persistence
     /// </summary>
     public class OrchestratorDbContext: DbContext
     {
+        private readonly ICurrentUserProvider _currentUserProvider;
+
         // This constructor is essential. It allows the dependency injection container
         // in our API project to pass in configuration, like the database connection string.
-        public OrchestratorDbContext(DbContextOptions<OrchestratorDbContext> options)
+        public OrchestratorDbContext(DbContextOptions<OrchestratorDbContext> options, ICurrentUserProvider currentUserProvider)
             : base(options)
         {
+            _currentUserProvider = currentUserProvider;
         }
 
         public DbSet<App> Apps { get; set; }
@@ -29,5 +33,28 @@ namespace Orchestrator.Infrastructure.Persistence
         public DbSet<Config> Configs { get; set; }
         public DbSet<ConfigAsset> ConfigAssets { get; set; }
         public DbSet<WebhookSubscription> WebhookSubscriptions { get; set; }
+        public DbSet<ApiClient> ApiClients { get; set; }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var userId = _currentUserProvider.UserId;
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.Entity.CreatedBy = userId;
+                        entry.Entity.CreatedAt = now;
+                        break;
+                    case EntityState.Modified:
+                        entry.Entity.ModifiedBy = userId;
+                        entry.Entity.ModifiedAt = now;
+                        break;
+                }
+            }
+            return await base.SaveChangesAsync(cancellationToken);
+        }
     }
 }

@@ -9,7 +9,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents a configuration container, which can be global or app-specific.
     /// </summary>
-    public class Config: BaseEntity
+    public class Config: AuditableEntity
     {
         public required string Name { get; set; }
 

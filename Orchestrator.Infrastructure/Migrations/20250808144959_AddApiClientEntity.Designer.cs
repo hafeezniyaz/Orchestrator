@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Orchestrator.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using Orchestrator.Infrastructure.Persistence;
 namespace Orchestrator.Infrastructure.Migrations
 {
     [DbContext(typeof(OrchestratorDbContext))]
-    partial class OrchestratorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250808144959_AddApiClientEntity")]
+    partial class AddApiClientEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -53,23 +56,11 @@ namespace Orchestrator.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -142,18 +133,6 @@ namespace Orchestrator.Infrastructure.Migrations
                     b.Property<Guid?>("AppId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -172,20 +151,8 @@ namespace Orchestrator.Infrastructure.Migrations
                     b.Property<Guid>("ConfigId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Key")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ModifiedBy")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ValueJson")
@@ -238,12 +205,6 @@ namespace Orchestrator.Infrastructure.Migrations
                     b.Property<Guid>("AppId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -253,12 +214,6 @@ namespace Orchestrator.Infrastructure.Migrations
 
                     b.Property<string>("Md5Checksum")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ModifiedBy")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UploadedDate")
