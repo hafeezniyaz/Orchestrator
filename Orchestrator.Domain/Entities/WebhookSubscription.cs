@@ -9,7 +9,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents a client's subscription to a specific server-side event.
     /// </summary>
-    public class WebhookSubscription: BaseEntity
+    public class WebhookSubscription: AuditableEntity
     {
         public required string ClientId { get; set; }
         public required string CallbackUrl { get; set; }

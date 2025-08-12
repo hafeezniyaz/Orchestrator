@@ -19,9 +19,14 @@ namespace Orchestrator.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ListAll()
+        public async Task<IActionResult> ListAll(
+            [FromQuery] string? name,
+            [FromQuery] bool? isActive,
+            [FromQuery] int skip = 0,
+            [FromQuery] int top = 50
+            )
         {
-            var apps = await _appService.GetAllAppsAsync();
+            var apps = await _appService.GetAllAppsAsync(name, isActive, skip, top);
             return Ok(apps);
         }
 

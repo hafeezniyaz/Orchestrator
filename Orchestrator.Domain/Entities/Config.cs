@@ -9,11 +9,11 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents a configuration container, which can be global or app-specific.
     /// </summary>
-    public class Config: BaseEntity
+    public class Config: AuditableEntity
     {
         public required string Name { get; set; }
 
         // If AppId is null, it's a global configuration.
-        public Guid? AppId { get; set; }
+        public required Guid AppId { get; set; }
     }
 }

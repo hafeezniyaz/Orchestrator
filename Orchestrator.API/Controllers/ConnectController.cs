@@ -1,88 +1,69 @@
-﻿// Orchestrator.API/Controllers/ConnectController.cs
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration; // <-- Add this
 using Orchestrator.API.Models;
-using Orchestrator.Application.Common.Interfaces;
+using Orchestrator.Application.Features.Authentication.Interfaces;
 using System.Text;
 
-namespace Orchestrator.API.Controllers;
-
-[ApiController]
-[Route("[controller]")]
-public class ConnectController : ControllerBase
+namespace Orchestrator.API.Controllers
 {
-    private readonly IJwtTokenGenerator _jwtTokenGenerator;
-    private readonly IConfiguration _configuration;
-
-    // Inject IConfiguration
-    public ConnectController(IJwtTokenGenerator jwtTokenGenerator, IConfiguration configuration)
+    [ApiController]
+    [Route("[controller]")]
+    public class ConnectController : ControllerBase
     {
-        _jwtTokenGenerator = jwtTokenGenerator;
-        _configuration = configuration;
-    }
+        private readonly IConfiguration _configuration;
+        private readonly IClientAuthenticationService _clientAuthService;
 
-    [HttpPost("token")]
-    [AllowAnonymous]
-    public IActionResult GetToken([FromForm] TokenRequestModel request)
-    {
-        
-        string? generatedToken = null;
-        string? clientId = request.ClientId;
-        string? clientSecret = request.ClientSecret;
-
-        // Extract from Authorization header if not found in form
-        if (Request.Headers.ContainsKey("Authorization") && string.IsNullOrEmpty(clientId))
+        public ConnectController(
+            IConfiguration configuration,
+            IClientAuthenticationService clientAuthService)
         {
-            var authHeader = Request.Headers["Authorization"].ToString();
-            if (authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+            _configuration = configuration;
+            _clientAuthService = clientAuthService;
+        }
+
+        [HttpPost("token")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetToken([FromForm] TokenRequestModel request)
+        {
+            string? generatedToken = null;
+            string? clientId = request.ClientId;
+            string? clientSecret = request.ClientSecret;
+
+            // Extract from Authorization header if not found in form
+            if (Request.Headers.ContainsKey("Authorization") && string.IsNullOrEmpty(clientId))
             {
-                var encoded = authHeader.Substring("Basic ".Length).Trim();
-                var credentialBytes = Convert.FromBase64String(encoded);
-                var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
-                if (credentials.Length == 2)
+                var authHeader = Request.Headers["Authorization"].ToString();
+                if (authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
                 {
-                    clientId = credentials[0];
-                    clientSecret = credentials[1];
+                    var encoded = authHeader.Substring("Basic ".Length).Trim();
+                    var credentialBytes = Convert.FromBase64String(encoded);
+                    var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
+                    if (credentials.Length == 2)
+                    {
+                        clientId = credentials[0];
+                        clientSecret = credentials[1];
+                    }
                 }
             }
-        }
 
-
-        if (request.Granttype == "password")
-        {
-            if (request.username == "admin" && request.Password == "password")
+            if (request.Granttype == "client_credentials")
             {
-                var roles = new[] { "User" };
-                var userId = new Guid("a1b2c3d4-e5f6-7890-1234-567890abcdef");
-                generatedToken = _jwtTokenGenerator.GenerateToken(userId, request.username, roles);
+                generatedToken = await _clientAuthService.AuthenticateClientCredentialsAsync(clientId, clientSecret);
             }
-        } 
-        else if (request.Granttype == "client_credentials")
-        {
-            if (clientId == "cicd-pipeline" && clientSecret == "super-secret-client-key")
+
+            if (generatedToken != null)
             {
-                var clientIdAsGuid = new Guid("b2c3d4e5-f6a7-8901-2345-67890abcdef1");
-                var roles = new[] { "Administrator" };
-                generatedToken = _jwtTokenGenerator.GenerateToken(clientIdAsGuid, clientId, roles);
+                var expiryMinutes = _configuration.GetValue<int>("JwtSettings:ExpiryMinutes");
+                var response = new TokenResponseModel
+                {
+                    AccessToken = generatedToken,
+                    ExpiresIn = expiryMinutes * 60,
+                    TokenType = "Bearer"
+                };
+                return Ok(response);
             }
-        }
 
-        // If a token was generated, build the standard OAuth2 response
-        if (generatedToken != null)
-        {
-            var expiryMinutes = _configuration.GetValue<int>("JwtSettings:ExpiryMinutes");
-            var response = new TokenResponseModel
-            {
-                AccessToken = generatedToken,
-                ExpiresIn = expiryMinutes * 60, 
-                TokenType = "Bearer"
-            };
-            return Ok(response);
+            return Unauthorized("Invalid credentials or grant_type.");
         }
-
-        // If authentication failed for any reason
-        return Unauthorized("Invalid credentials or grant_type.");
     }
 }

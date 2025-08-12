@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/.vscode
+/Orchestrator.API/appsettings.json
+/Orchestrator.API/Properties/launchSettings.json
+/Orchestrator.API/temp.db
