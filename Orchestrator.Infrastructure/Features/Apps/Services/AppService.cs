@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Orchestrator.Application.Common.Models;
 using Orchestrator.Application.Features.Apps.Interfaces;
 using Orchestrator.Application.Features.Apps.Models;
 using Orchestrator.Infrastructure.Persistence;
@@ -46,17 +47,42 @@ namespace Orchestrator.Infrastructure.Features.Apps.Services
             };
         }
 
-        public async Task<IEnumerable<AppDto>> GetAllAppsAsync()
+        public async Task<PagedResult<AppDto>> GetAllAppsAsync(string? name, bool? isActive, int skip, int top)
         {
-            return await _context.Apps
-             .Select(app => new AppDto
-             {
-                 Id = app.Id,
-                 Name = app.Name,
-                 Description = app.Description,
-                 IsActive = app.IsActive
-             })
-             .ToListAsync();
+            var query = _context.Apps.AsQueryable();
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                query = query.Where(a => a.Name.Contains(name));
+            }
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(a => a.IsActive == isActive.Value);
+            }
+
+            // Get the total count BEFORE pagination
+            var totalCount = await query.CountAsync();
+
+            // Now, apply ordering and pagination to get the items for the current page
+            var items = await query
+                .OrderBy(a => a.Name)
+                .Skip(skip)
+                .Take(top)
+                .Select(app => new AppDto
+                {
+                    Id = app.Id,
+                    Name = app.Name,
+                    Description = app.Description,
+                    IsActive = app.IsActive
+                })
+                .ToListAsync();
+
+            return new PagedResult<AppDto>
+            {
+                Items = items,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<AppDto?> GetAppByIdAsync(Guid appId)

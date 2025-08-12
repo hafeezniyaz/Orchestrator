@@ -19,9 +19,15 @@ public class PackagesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> ListPackagesForApp(Guid appId)
+    public async Task<IActionResult> ListPackagesForApp(
+        Guid appId,
+            [FromQuery] string? version,
+            [FromQuery] bool? isActive,
+            [FromQuery] int skip = 0,
+            [FromQuery] int top = 20
+        )
     {
-        var packages = await _packageService.GetPackagesForAppAsync(appId);
+        var packages = await _packageService.GetPackagesForAppAsync(appId, version, isActive, skip, top);
         return Ok(packages);
     }
 

@@ -9,7 +9,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents an immutable record of an action taken within the API for auditing purposes.
     /// </summary>
-    public class AuditLog : BaseEntity
+    public class AuditLog : AuditableEntity
     {
         public DateTime Timestamp { get; set; }
         public string? UserId { get; set; }

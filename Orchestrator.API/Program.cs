@@ -15,6 +15,17 @@ using Orchestrator.Application.Features.Packages.Interfaces;
 using Orchestrator.Infrastructure.Features.Packages.Services;
 using Orchestrator.Application.Features.Heartbeat.Interfaces;
 using Orchestrator.Infrastructure.Features.Heartbeat.Services;
+using Orchestrator.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Authentication;
+using Orchestrator.Infrastructure.Authorization;
+using Orchestrator.Application.Features.ApiClients.Interfaces;
+using Orchestrator.Infrastructure.Features.ApiClients.Services;
+using Orchestrator.Application.Features.Authentication.Interfaces;
+using Orchestrator.Application.Features.Logs.Interfaces;
+using Orchestrator.Infrastructure.Features.Logs.Services;
+using Orchestrator.Application.Features.Configs.Interfaces;
+using Orchestrator.Infrastructure.Features.Configs.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +37,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .WriteTo.Console());
-
-
+ 
 //cors
 //development CORS policy a name
 var devCorsPolicy = "devCorsPolicy";
@@ -56,25 +66,43 @@ builder.Services.AddScoped<IAppService, AppService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<IHeartbeatService, HeartbeatService>();
 builder.Services.AddHostedService<HeartbeatMonitorService>(); //signleton
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ISecretHasher, SecretHasher>();// Register the secret hasher as a singleton since it has no state.
+builder.Services.AddScoped<IApiClientService, ApiClientService>();
+builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
+builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddScoped<IConfigService, ConfigService>();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+// 1. Configure Authentication to support multiple schemes (Windows and JWT)
+builder.Services.AddScoped<IClaimsTransformation, ADGroupRoleTransformation>();
+builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+    .AddNegotiate() // This enables Windows Authentication.
+    .AddJwtBearer(options => // This keeps our existing JWT Bearer token authentication.
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"]!))
-    };
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"]!))
+        };
+    });
+
+// 2. Configure Authorization to create a default policy that accepts EITHER scheme.
+// This means any endpoint with a simple [Authorize] attribute will allow access
+// to a user authenticated via Windows OR a valid JWT.
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder(
+        NegotiateDefaults.AuthenticationScheme,
+        JwtBearerDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 //authorization
@@ -151,5 +179,35 @@ app.UseAuthorization();
 app.UseMiddleware<AuditMiddleware>();
 
 app.MapControllers();
+
+
+//for seeding client credential with admin role
+//using (var scope = app.Services.CreateScope())
+//{
+//    var serviceProvider = scope.ServiceProvider;
+//    var dbContext = serviceProvider.GetRequiredService<OrchestratorDbContext>();
+//    var secretHasher = serviceProvider.GetRequiredService<ISecretHasher>();
+//    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+
+//    string clientId = "cicd-pipeline";
+//    if (!await dbContext.ApiClients.AnyAsync(c => c.ClientId == clientId))
+//    {
+//        logger.LogInformation("Seeding test API client...");
+//        var apiClient = new Orchestrator.Domain.Entities.ApiClient
+//        {
+//            ClientName = "CI/CD Pipeline",
+//            ClientId = clientId,
+//            // Here we hash the secret before storing it
+//            HashedClientSecret = secretHasher.HashSecret("super-secret-client-key"),
+//            Roles = "Administrator,Publisher", // Granting powerful roles to our pipeline client
+//            IsActive = true
+//        };
+//        dbContext.ApiClients.Add(apiClient);
+//        await dbContext.SaveChangesAsync();
+//        logger.LogInformation("Test API client seeded successfully.");
+//    }
+//}
+
+
 
 app.Run();

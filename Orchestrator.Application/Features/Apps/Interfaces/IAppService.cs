@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Orchestrator.Application.Common.Models;
 using Orchestrator.Application.Features.Apps.Models;
 
 namespace Orchestrator.Application.Features.Apps.Interfaces
@@ -13,7 +14,7 @@ namespace Orchestrator.Application.Features.Apps.Interfaces
         /// Retrieves a list of all applications.
         /// </summary>
         /// <returns>A list of application DTOs.</returns>
-        Task<IEnumerable<AppDto>> GetAllAppsAsync();
+        Task<PagedResult<AppDto>> GetAllAppsAsync(string? name, bool? isActive, int skip, int top);
 
         /// <summary>
         /// Retrieves a specific application by its ID.

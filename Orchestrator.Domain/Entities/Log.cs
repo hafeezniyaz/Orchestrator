@@ -9,7 +9,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents a single log entry, typically submitted by a client application.
     /// </summary>
-    public class Log : BaseEntity
+    public class Log : AuditableEntity
     {
         public DateTime Timestamp { get; set; }
         public required string Source { get; set; }
