@@ -79,7 +79,7 @@ builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IConfigService, ConfigService>();
 builder.Services.AddScoped<IRoleMappingService, RoleMappingService>();
 builder.Services.AddScoped<IRoleService,RoleService>();
-
+builder.Services.AddScoped<IADGroupValidator, ADGroupValidator>();
 // 1. Configure Authentication to support multiple schemes (Windows and JWT)
 builder.Services.AddScoped<IClaimsTransformation, ADGroupRoleTransformation>();
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Orchestrator.Application.Features.RoleMappings.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,5 +22,23 @@ namespace Orchestrator.Application.Features.RoleMappings.Interfaces
         /// <param name="apiClientId">The ID of the API client to update.</param>
         /// <param name="roleNames">An enumerable of role names to assign.</param>
         Task UpdateApiClientRolesAsync(Guid apiClientId, IEnumerable<string> roleNames);
+        /// <summary>
+        /// Get AD role Mappings
+        /// </summary>
+        /// <returns></returns>
+        Task<IEnumerable<ADGroupRoleMappingDto>> GetADGroupRoleMappingsAsync();
+        /// <summary>
+        /// Set role to AdGroup
+        /// </summary>
+        /// <param name="adGroupName"></param>
+        /// <param name="roleName"></param>
+        /// <returns></returns>
+        Task SetADGroupRoleAsync(string adGroupName, string roleName);
+        /// <summary>
+        /// Remove role for an ad group
+        /// </summary>
+        /// <param name="adGroupName"></param>
+        /// <returns></returns>
+        Task RemoveADGroupRoleAsync(string adGroupName);
     }
 }

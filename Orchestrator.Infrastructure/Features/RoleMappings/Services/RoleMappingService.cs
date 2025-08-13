@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Orchestrator.Application.Features.RoleMappings.Interfaces;
+using Orchestrator.Application.Features.RoleMappings.Models;
 using Orchestrator.Domain.Entities;
 using Orchestrator.Infrastructure.Persistence;
 
@@ -53,6 +54,54 @@ namespace Orchestrator.Infrastructure.Features.RoleMappings.Services
 
             // 6. Save all changes (deletions and additions) in one transaction
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<ADGroupRoleMappingDto>> GetADGroupRoleMappingsAsync()
+        {
+            return await _dbContext.RoleMappings
+                .AsNoTracking()
+                .Where(rm => rm.ADGroup != null)
+                .Select(rm => new ADGroupRoleMappingDto
+                {
+                    ADGroupName = rm.ADGroup!,
+                    RoleName = _dbContext.Roles.First(r => r.Id == rm.RoleId).Name
+                })
+                .OrderBy(dto => dto.ADGroupName)
+                .ToListAsync();
+        }
+
+        public async Task SetADGroupRoleAsync(string adGroupName, string roleName)
+        {
+            var existingMapping = await _dbContext.RoleMappings
+                .FirstOrDefaultAsync(rm => rm.ADGroup == adGroupName);
+
+            if (existingMapping != null)
+            {
+                _dbContext.RoleMappings.Remove(existingMapping);
+            }
+
+            var role = await _dbContext.Roles.SingleAsync(r => r.Name == roleName);
+
+            var newMapping = new RoleMapping
+            {
+                RoleId = role.Id,
+                ADGroup = adGroupName
+            };
+
+            _dbContext.RoleMappings.Add(newMapping);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveADGroupRoleAsync(string adGroupName)
+        {
+            var existingMapping = await _dbContext.RoleMappings
+                .FirstOrDefaultAsync(rm => rm.ADGroup == adGroupName);
+
+            if (existingMapping != null)
+            {
+                _dbContext.RoleMappings.Remove(existingMapping);
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }

@@ -1,66 +1,69 @@
 ﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using Orchestrator.Infrastructure.Persistence;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
+using System.Threading.Tasks;
 
 namespace Orchestrator.Infrastructure.Authorization
 {
     public class ADGroupRoleTransformation : IClaimsTransformation
     {
-        private readonly IConfiguration _configuration;
+        // We inject the DbContext directly because this is a transient, scoped service
+        // that runs for each authenticated request.
+        private readonly OrchestratorDbContext _dbContext;
 
-        public ADGroupRoleTransformation(IConfiguration configuration)
+        public ADGroupRoleTransformation(OrchestratorDbContext dbContext)
         {
-            _configuration = configuration;
+            _dbContext = dbContext;
         }
 
-        public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
+        public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
-            if (principal.Identity is not WindowsIdentity windowsIdentity)
+            if (principal.Identity is not WindowsIdentity windowsIdentity || !windowsIdentity.IsAuthenticated)
             {
-                return Task.FromResult(principal);
+                return principal;
             }
 
-            var roleMappings = _configuration.GetSection("AuthorizationSettings:RoleMappings")
-                                             .Get<Dictionary<string, string>>();
-
-            if (roleMappings == null || !roleMappings.Any())
-            {
-                return Task.FromResult(principal);
-            }
-
-            var newIdentity = new ClaimsIdentity(windowsIdentity.AuthenticationType, windowsIdentity.NameClaimType, windowsIdentity.RoleClaimType);
-            newIdentity.AddClaims(principal.Claims);
-
-            // ---- CHANGE 1: Add a flag to track if we assigned a role. ----
-            var roleWasAssigned = false;
-
-            foreach (var group in windowsIdentity.Groups)
+            // 1. Get the names of all AD groups the user belongs to.
+            var userGroupNames = new List<string>();
+            foreach (var group in windowsIdentity.Groups!)
             {
                 try
                 {
-                    string groupName = group.Translate(typeof(NTAccount)).Value;
-
-                    if (roleMappings.TryGetValue(groupName, out var role))
-                    {
-                        newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, role));
-                        // ---- CHANGE 2: Set the flag to true since we found a match. ----
-                        roleWasAssigned = true;
-                    }
+                    userGroupNames.Add(group.Translate(typeof(NTAccount)).Value);
                 }
                 catch (IdentityNotMappedException)
                 {
-                    // Ignore unmappable SIDs
+                    // This is expected and normal for some system SIDs, so we ignore them.
                 }
             }
 
-            // ---- CHANGE 3: If after checking all groups, no role was assigned, give them the default role. ----
-            if (!roleWasAssigned)
+            // 2. Query the database to find roles based on the user's group memberships.
+            var rolesFromDb = await _dbContext.RoleMappings
+                .AsNoTracking()
+                .Where(rm => rm.ADGroup != null && userGroupNames.Contains(rm.ADGroup))
+                .Select(rm => _dbContext.Roles.First(r => r.Id == rm.RoleId).Name)
+                .Distinct()
+                .ToListAsync();
+
+            // 3. Create a new identity, copy existing claims, and add the new roles.
+            var newIdentity = new ClaimsIdentity(windowsIdentity.AuthenticationType, windowsIdentity.NameClaimType, windowsIdentity.RoleClaimType);
+            newIdentity.AddClaims(principal.Claims);
+            foreach (var role in rolesFromDb)
+            {
+                newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, role));
+            }
+
+            // 4. Fallback: If no roles were found in the DB, assign the default 'User' role.
+            if (!rolesFromDb.Any())
             {
                 newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, "User"));
             }
 
-            return Task.FromResult(new ClaimsPrincipal(newIdentity));
+            return new ClaimsPrincipal(newIdentity);
         }
     }
 }
