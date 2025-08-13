@@ -3,6 +3,8 @@ using Orchestrator.Application.Features.ApiClients.Models;
 using Orchestrator.Application.Common.Interfaces;
 using Orchestrator.Infrastructure.Persistence;
 using System.Security.Cryptography;
+using Orchestrator.Application.Features.RoleMappings.Interfaces;
+using Orchestrator.Infrastructure.Features.RoleMappings.Services;
 
 namespace Orchestrator.Infrastructure.Features.ApiClients.Services
 {
@@ -10,11 +12,13 @@ namespace Orchestrator.Infrastructure.Features.ApiClients.Services
     {
         private readonly OrchestratorDbContext _dbContext;
         private readonly ISecretHasher _secretHasher;
+        private readonly IRoleMappingService _roleMappingService;
 
-        public ApiClientService(OrchestratorDbContext dbContext, ISecretHasher secretHasher)
+        public ApiClientService(OrchestratorDbContext dbContext, ISecretHasher secretHasher , IRoleMappingService roleMappingService)
         {
             _dbContext = dbContext;
             _secretHasher = secretHasher;
+            _roleMappingService = roleMappingService;
         }
 
         public async Task<CreateApiClientResponse> CreateApiClientAsync(CreateApiClientRequest request)
@@ -28,7 +32,6 @@ namespace Orchestrator.Infrastructure.Features.ApiClients.Services
                 ClientName = request.ClientName,
                 ClientId = Guid.NewGuid().ToString(), // Generate a new unique Client ID
                 HashedClientSecret = _secretHasher.HashSecret(plainTextSecret),
-                Roles = request.Roles,
                 IsActive = true
             };
 
@@ -37,13 +40,15 @@ namespace Orchestrator.Infrastructure.Features.ApiClients.Services
             await _dbContext.SaveChangesAsync();
 
             // 4. Return the response, including the one-time plain text secret
+            await _roleMappingService.UpdateApiClientRolesAsync(newApiClient.Id, request.RoleNames);
+
             return new CreateApiClientResponse
             {
                 Id = newApiClient.Id,
                 ClientName = newApiClient.ClientName,
                 ClientId = newApiClient.ClientId,
                 ClientSecret = plainTextSecret, // Return the plain text secret
-                Roles = newApiClient.Roles,
+                RoleNames = request.RoleNames,
                 IsActive = newApiClient.IsActive
             };
         }

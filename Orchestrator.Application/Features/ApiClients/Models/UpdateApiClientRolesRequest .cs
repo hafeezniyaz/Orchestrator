@@ -1,19 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Orchestrator.Application.Features.ApiClients.Models
 {
-    public class CreateApiClientRequest
+    public  class UpdateApiClientRolesRequest
     {
-        [Required]
-        [MaxLength(100)]
-        public required string ClientName { get; set; }
-
-        [Required]
         public required List<string> RoleNames { get; set; }
     }
 }

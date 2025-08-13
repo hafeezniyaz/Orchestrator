@@ -12,7 +12,7 @@ namespace Orchestrator.Application.Features.ApiClients.Models
         public required string ClientName { get; set; }
         public required string ClientId { get; set; }
         public required string ClientSecret { get; set; } // IMPORTANT: This is sent only once upon creation.
-        public required string Roles { get; set; }
+        public required List<string> RoleNames { get; set; }
         public bool IsActive { get; set; }
     }
 }

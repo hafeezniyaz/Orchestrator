@@ -36,7 +36,13 @@ namespace Orchestrator.Infrastructure.Authentication
 
             if (client != null && _secretHasher.VerifySecret(clientSecret, client.HashedClientSecret))
             {
-                var roles = client.Roles.Split(',', System.StringSplitOptions.RemoveEmptyEntries);
+                var roles = await _dbContext.RoleMappings
+                     .Where(rm => rm.ApiClientId == client.Id)
+                     .Join(_dbContext.Roles,         // Join RoleMappings with Roles table
+                         rm => rm.RoleId,             // On RoleMapping.RoleId
+                         r => r.Id,                   // equal to Role.Id
+                         (rm, r) => r.Name)           // And select the Role.Name
+                     .ToListAsync();
                 var generatedToken = _jwtTokenGenerator.GenerateToken(client.Id, client.ClientName, roles);
                 return generatedToken;
             }
@@ -45,8 +51,8 @@ namespace Orchestrator.Infrastructure.Authentication
 
         }
 
-    
 
-    
+
+
     }
 }
