@@ -26,6 +26,10 @@ using Orchestrator.Application.Features.Logs.Interfaces;
 using Orchestrator.Infrastructure.Features.Logs.Services;
 using Orchestrator.Application.Features.Configs.Interfaces;
 using Orchestrator.Infrastructure.Features.Configs.Services;
+using Orchestrator.Application.Features.RoleMappings.Interfaces;
+using Orchestrator.Infrastructure.Features.RoleMappings.Services;
+using Orchestrator.Application.Features.Roles.Interfaces;
+using Orchestrator.Infrastructure.Features.Roles.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,6 +77,8 @@ builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IConfigService, ConfigService>();
+builder.Services.AddScoped<IRoleMappingService, RoleMappingService>();
+builder.Services.AddScoped<IRoleService,RoleService>();
 
 // 1. Configure Authentication to support multiple schemes (Windows and JWT)
 builder.Services.AddScoped<IClaimsTransformation, ADGroupRoleTransformation>();

@@ -12,7 +12,6 @@
         /// <summary>
         /// A comma-separated list of roles assigned to this client (e.g., "Publisher,View").
         /// </summary>
-        public required string Roles { get; set; }
         public bool IsActive { get; set; } = true;
     }
 }
