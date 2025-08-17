@@ -41,6 +41,46 @@ namespace Orchestrator.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); // It's important to call the base method
+
+            // Configure the primary key for the App entity
+            modelBuilder.Entity<App>()
+                .HasMany<Package>()
+                .WithOne()
+                .HasForeignKey(p => p.AppId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // ✅ Define the App -> Config relationship
+            modelBuilder.Entity<App>()
+                .HasMany<Config>() // An App can have many Configs
+                .WithOne()         // A Config belongs to one App
+                .HasForeignKey(c => c.AppId)
+                .OnDelete(DeleteBehavior.Cascade); // When an App is deleted, delete its Configs
+
+            // Define the Config -> ConfigAsset relationship
+            modelBuilder.Entity<Config>()
+                .HasMany<ConfigAsset>() // A Config can have many ConfigAssets
+                .WithOne()              // A ConfigAsset belongs to one Config
+                .HasForeignKey(a => a.ConfigId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // Define the Role -> RoleMapping relationship
+            modelBuilder.Entity<ApiClient>()
+                .HasMany<RoleMapping>()
+                .WithOne()
+                .HasForeignKey(rm => rm.ApiClientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // ✅ Explicitly define the safe, default behavior for Roles.
+            // This will PREVENT a Role from being deleted if it's in use.
+            modelBuilder.Entity<Role>()
+                .HasMany<RoleMapping>()
+                .WithOne()
+                .HasForeignKey(rm => rm.RoleId)
+                .OnDelete(DeleteBehavior.Restrict); // Explicitly set to Restrict
+
             var seedDate = new DateTime(2025, 8, 12, 0, 0, 0, DateTimeKind.Utc);
 
             // Seed Roles with fixed IDs for stable foreign key relationships

@@ -32,11 +32,19 @@ public class PackagesController : ControllerBase
     }
 
     [HttpGet("{version}")]
-    public IActionResult GetPackageByVersion(Guid appId, string version)
+    public async Task<IActionResult> GetPackageByVersion(Guid appId, string version)
     {
-        // We will implement the real service logic for this in a later task.
-        // For now, this placeholder makes our POST endpoint's response correct.
-        return Ok($"Placeholder for getting app {appId}, version {version}");
+        // Call the new service method
+        var package = await _packageService.GetPackageByVersionAsync(appId, version);
+
+        // If the package is not found, return a 404 Not Found response
+        if (package == null)
+        {
+            return NotFound($"Package with version '{version}' not found for this app.");
+        }
+
+        // If the package is found, return a 200 OK response with the package details
+        return Ok(package);
     }
 
 
