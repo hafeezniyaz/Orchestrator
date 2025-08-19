@@ -188,31 +188,31 @@ app.MapControllers();
 
 
 //for seeding client credential with admin role
-//using (var scope = app.Services.CreateScope())
-//{
-//    var serviceProvider = scope.ServiceProvider;
-//    var dbContext = serviceProvider.GetRequiredService<OrchestratorDbContext>();
-//    var secretHasher = serviceProvider.GetRequiredService<ISecretHasher>();
-//    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+using (var scope = app.Services.CreateScope())
+{
+    var serviceProvider = scope.ServiceProvider;
+    var dbContext = serviceProvider.GetRequiredService<OrchestratorDbContext>();
+    var secretHasher = serviceProvider.GetRequiredService<ISecretHasher>();
+    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
-//    string clientId = "cicd-pipeline";
-//    if (!await dbContext.ApiClients.AnyAsync(c => c.ClientId == clientId))
-//    {
-//        logger.LogInformation("Seeding test API client...");
-//        var apiClient = new Orchestrator.Domain.Entities.ApiClient
-//        {
-//            ClientName = "CI/CD Pipeline",
-//            ClientId = clientId,
-//            // Here we hash the secret before storing it
-//            HashedClientSecret = secretHasher.HashSecret("super-secret-client-key"),
-//            Roles = "Administrator,Publisher", // Granting powerful roles to our pipeline client
-//            IsActive = true
-//        };
-//        dbContext.ApiClients.Add(apiClient);
-//        await dbContext.SaveChangesAsync();
-//        logger.LogInformation("Test API client seeded successfully.");
-//    }
-//}
+    string clientId = "cicd-pipeline";
+    if (!await dbContext.ApiClients.AnyAsync(c => c.ClientId == clientId))
+    {
+        logger.LogInformation("Seeding test API client...");
+        var apiClient = new Orchestrator.Domain.Entities.ApiClient
+        {
+            ClientName = "CI/CD Pipeline",
+            ClientId = clientId,
+            // Here we hash the secret before storing it
+            HashedClientSecret = secretHasher.HashSecret("super-secret-client-key"),
+            
+            IsActive = true
+        };
+        dbContext.ApiClients.Add(apiClient);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Test API client seeded successfully.");
+    }
+}
 
 
 

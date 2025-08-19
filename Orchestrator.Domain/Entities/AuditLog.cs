@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace Orchestrator.Domain.Entities
     /// <summary>
     /// Represents an immutable record of an action taken within the API for auditing purposes.
     /// </summary>
+    [Table("TMUSAuditLog")]
     public class AuditLog : AuditableEntity
     {
         public DateTime Timestamp { get; set; }
