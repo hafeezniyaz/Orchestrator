@@ -1,8 +1,11 @@
-﻿namespace Orchestrator.Domain.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Orchestrator.Domain.Entities
 {
     /// <summary>
     /// Represents a machine or service client that authenticates using the client_credentials flow.
     /// </summary>
+    [Table("TMUSApiClient")]
     public class ApiClient : AuditableEntity
     {
         public required string ClientName { get; set; }
