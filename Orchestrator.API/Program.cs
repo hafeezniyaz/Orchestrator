@@ -30,6 +30,9 @@ using Orchestrator.Application.Features.RoleMappings.Interfaces;
 using Orchestrator.Infrastructure.Features.RoleMappings.Services;
 using Orchestrator.Application.Features.Roles.Interfaces;
 using Orchestrator.Infrastructure.Features.Roles.Services;
+using Orchestrator.API.Middleware;
+using Orchestrator.Application.Features.Credentials.Interfaces;
+using Orchestrator.Infrastructure.Features.Credentials.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +83,11 @@ builder.Services.AddScoped<IConfigService, ConfigService>();
 builder.Services.AddScoped<IRoleMappingService, RoleMappingService>();
 builder.Services.AddScoped<IRoleService,RoleService>();
 builder.Services.AddScoped<IADGroupValidator, ADGroupValidator>();
+// Register the services for the Secure Credential Store feature
+builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+builder.Services.AddScoped<ICredentialService, CredentialService>();
+
+
 // 1. Configure Authentication to support multiple schemes (Windows and JWT)
 builder.Services.AddScoped<IClaimsTransformation, ADGroupRoleTransformation>();
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
@@ -183,6 +191,7 @@ app.UseAuthorization();
 
 //add midleware
 app.UseMiddleware<AuditMiddleware>();
+app.UseMiddleware<ErrorHandlerMiddleware>();
 
 app.MapControllers();
 

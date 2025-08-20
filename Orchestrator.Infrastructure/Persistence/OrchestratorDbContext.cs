@@ -37,6 +37,7 @@ namespace Orchestrator.Infrastructure.Persistence
         public DbSet<Role> Roles { get; set; }
         public DbSet<RoleMapping> RoleMappings { get; set; }
 
+        public DbSet<Credential> Credentials { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -91,6 +92,19 @@ namespace Orchestrator.Infrastructure.Persistence
             //    new Role { Id = Guid.Parse("f5e4d3c2-b1a0-9876-5432-10fedcba9876"), Name = "User", CreatedAt = seedDate },
             //    new Role { Id = Guid.Parse("71cb4b4c-e3f6-48b1-b800-cbf20acbf1ab"), Name = "Support", CreatedAt = seedDate }
             //);
+
+
+            // ✅ Define the App -> Credential relationship
+            modelBuilder.Entity<App>()
+                .HasMany<Credential>() // An App can have many Credentials
+                .WithOne()             // A Credential belongs to one App
+                .HasForeignKey(c => c.AppId)
+                .OnDelete(DeleteBehavior.Cascade); // When an App is deleted, delete its Credentials
+
+            // ✅ Define the unique constraint for Credential
+            modelBuilder.Entity<Credential>()
+                .HasIndex(c => new { c.Name, c.AppId })
+                .IsUnique();
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
