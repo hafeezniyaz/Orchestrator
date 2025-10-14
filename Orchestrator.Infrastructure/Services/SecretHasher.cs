@@ -1,4 +1,5 @@
-﻿using Orchestrator.Application.Common.Interfaces;
+﻿using Microsoft.Identity.Client;
+using Orchestrator.Application.Common.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,6 @@ namespace Orchestrator.Infrastructure.Services
     {
         public string HashSecret(string secret) => BCrypt.Net.BCrypt.HashPassword(secret);
 
-        public bool VerifySecret(string providedSecret, string hashedSecret) =>
-            BCrypt.Net.BCrypt.Verify(providedSecret, hashedSecret);
+        public bool VerifySecret(string providedSecret, string hashSecret) => BCrypt.Net.BCrypt.Verify(providedSecret, hashSecret);
     }
 }

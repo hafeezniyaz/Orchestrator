@@ -1,52 +1,59 @@
-﻿// Orchestrator.API/Swagger/SecurityRequirementsOperationFilter.cs
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Reflection;
 
-namespace Orchestrator.API.Swagger;
-
-public class SecurityRequirementsOperationFilter : IOperationFilter
+namespace Orchestrator.API.Swagger
 {
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    public class SecurityRequirementsOperationFilter : IOperationFilter
     {
-        var hasAnonymous = context.MethodInfo.DeclaringType?
-            .GetCustomAttributes(true)
-            .Union(context.MethodInfo.GetCustomAttributes(true))
-            .OfType<AllowAnonymousAttribute>()
-            .Any() ?? false;
 
-        if (hasAnonymous) return;
-
-        var hasAuthorize = context.MethodInfo.DeclaringType?
-            .GetCustomAttributes(true)
-            .Union(context.MethodInfo.GetCustomAttributes(true))
-            .OfType<AuthorizeAttribute>()
-            .Any() ?? false;
-
-        if (!hasAuthorize) return;
-        
-        // This is the key part. We add a security requirement that lists both flows.
-        // The UI will interpret this as an "OR", letting the user choose.
-        operation.Security = new List<OpenApiSecurityRequirement>
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
-            new()
+            var hasAnonymous = context.MethodInfo.DeclaringType?
+                 .GetCustomAttributes(true)
+                 .Union(context.MethodInfo.GetCustomAttributes(true))
+                 .OfType<AllowAnonymousAttribute>()
+                 .Any() ?? false;
+
+            if (hasAnonymous) return;
+
+            var hasAuthorization=context.MethodInfo.DeclaringType?
+                 .GetCustomAttributes(true)
+                 .Union(context.MethodInfo.GetCustomAttributes(true))
+                 .OfType<AuthorizeAttribute>()
+                 .Any() ?? false;
+
+            if (!hasAuthorization) return;
+
+            operation.Security = new List<OpenApiSecurityRequirement>
             {
+                new()
                 {
-                    new OpenApiSecurityScheme
                     {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "PasswordFlow" }
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "PasswordFlow"
+                            }
+                        },
+                        new List<string>()
                     },
-                    new List<string>()
-                },
-                {
-                    new OpenApiSecurityScheme
                     {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ClientCredentialsFlow" }
-                    },
-                    new List<string>()
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "ClientCredentialFlow"
+                            }
+                        },
+                        new List<string>()
+                    }
                 }
-            }
-        };
+            };
+        }
     }
 }

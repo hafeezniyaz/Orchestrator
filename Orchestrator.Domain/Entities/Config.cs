@@ -8,14 +8,12 @@ using System.Threading.Tasks;
 namespace Orchestrator.Domain.Entities
 {
     /// <summary>
-    /// Represents a configuration container, which can be global or app-specific.
+    /// represents a configuration container which can be global or app-specific
     /// </summary>
     [Table("TMUSConfig")]
     public class Config: AuditableEntity
     {
-        public required string Name { get; set; }
-
-        // If AppId is null, it's a global configuration.
+        public required string  Name { get; set; }
         public required Guid AppId { get; set; }
     }
 }

@@ -1,35 +1,41 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.EntityFrameworkCore;
-using Orchestrator.Infrastructure.Persistence;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
-using System.Security.Principal;
+using System.Text;
 using System.Threading.Tasks;
-
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Configuration;
+using System.Security.Principal;
+using System.Security.Claims;
+using Orchestrator.Infrastructure.Persistance;
+using Microsoft.EntityFrameworkCore;
 namespace Orchestrator.Infrastructure.Authorization
 {
     public class ADGroupRoleTransformation : IClaimsTransformation
     {
-        // We inject the DbContext directly because this is a transient, scoped service
-        // that runs for each authenticated request.
-        private readonly OrchestratorDbContext _dbContext;
+        private readonly IConfiguration _configuartion;
+        private readonly OrchestratorDbContext _context;
 
-        public ADGroupRoleTransformation(OrchestratorDbContext dbContext)
+
+        public ADGroupRoleTransformation(IConfiguration configuration , OrchestratorDbContext orchestratorDbContext)
         {
-            _dbContext = dbContext;
+            _configuartion = configuration;
+            _context = orchestratorDbContext;
         }
+
 
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
-            if (principal.Identity is not WindowsIdentity windowsIdentity || !windowsIdentity.IsAuthenticated)
+            if(principal.Identity is not WindowsIdentity windowsIdentity || !windowsIdentity.IsAuthenticated)
             {
                 return principal;
             }
 
-            // 1. Get the names of all AD groups the user belongs to.
+
+            //get the group names of the user
             var userGroupNames = new List<string>();
-            foreach (var group in windowsIdentity.Groups!)
+
+            foreach(var group in windowsIdentity.Groups!)
             {
                 try
                 {
@@ -37,30 +43,38 @@ namespace Orchestrator.Infrastructure.Authorization
                 }
                 catch (IdentityNotMappedException)
                 {
-                    // This is expected and normal for some system SIDs, so we ignore them.
+                    //ignore unmappable sids
                 }
             }
 
-            // 2. Query the database to find roles based on the user's group memberships.
-            var rolesFromDb = await _dbContext.RoleMappings
+            //get roleMappig from context
+
+            var rolesFromDb = await _context.RoleMappings
                 .AsNoTracking()
-                .Where(rm => rm.ADGroup != null && userGroupNames.Contains(rm.ADGroup))
-                .Select(rm => _dbContext.Roles.First(r => r.Id == rm.RoleId).Name)
+                .Where(rm => rm.AdGroup != null && userGroupNames.Contains(rm.AdGroup))
+                .Select(rm => _context.Roles.First(r => r.Id == rm.RoleId).Name)
                 .Distinct()
                 .ToListAsync();
+            
 
-            // 3. Create a new identity, copy existing claims, and add the new roles.
+
             var newIdentity = new ClaimsIdentity(windowsIdentity.AuthenticationType, windowsIdentity.NameClaimType, windowsIdentity.RoleClaimType);
             newIdentity.AddClaims(principal.Claims);
-            foreach (var role in rolesFromDb)
+
+            foreach(var role in rolesFromDb)
             {
-                newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, role));
+                  newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, role));
+
             }
 
-            // 4. Fallback: If no roles were found in the DB, assign the default 'User' role.
             if (!rolesFromDb.Any())
             {
-                newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, "User"));
+                newIdentity.AddClaim(new Claim(newIdentity.RoleClaimType, "User")); //assign user role by default
+            }
+
+            if(windowsIdentity.Name!=null && !newIdentity.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
+            {
+                newIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, windowsIdentity.Name));
             }
 
             return new ClaimsPrincipal(newIdentity);

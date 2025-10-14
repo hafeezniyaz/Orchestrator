@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 namespace Orchestrator.Application.Features.Apps.Models
 {
     public class CreateAppRequest
-
     {
         [Required]
         [MaxLength(100)]
@@ -16,7 +15,6 @@ namespace Orchestrator.Application.Features.Apps.Models
 
         [MaxLength(500)]
         public string? Description { get; set; }
-
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; }
     }
 }

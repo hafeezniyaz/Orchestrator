@@ -1,47 +1,50 @@
 ﻿using System.Security.Claims;
 using Orchestrator.Domain.Entities;
-using Orchestrator.Infrastructure.Persistence;
+using Orchestrator.Infrastructure.Persistance;
 
-public class AuditMiddleware
+namespace Orchestrator.API.Middleware
 {
-    private readonly RequestDelegate _next;
 
-    public AuditMiddleware(RequestDelegate next)
+    public class AuditMiddleware
     {
-        _next = next;
-    }
-
-    // the middleware looks for the method called InvokeAsync or Invoke when a miiddleware is registered 
-    public async Task InvokeAsync(HttpContext context) 
-    {
-        // Allow the request stream to be read multiple times
-        context.Request.EnableBuffering();
-
-        var auditLog = new AuditLog
+        private readonly RequestDelegate _next;
+        
+        public AuditMiddleware(RequestDelegate next)
         {
-            IpAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            Action = $"{context.Request.Method} {context.Request.Path}",
-            Timestamp = DateTime.UtcNow,
-            // Extract user ID from the token's claims if the user is authenticated
-            UserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-        };
-
-        // Read request body
-        using (var reader = new StreamReader(context.Request.Body, leaveOpen: true))
-        {
-            auditLog.RequestDetails = await reader.ReadToEndAsync();
-            // IMPORTANT: Reset stream position for the next middleware
-            context.Request.Body.Position = 0;
+            
+            _next = next;
         }
 
-        await _next(context); // Call the next middleware in the pipeline
+        //impliement InvokeAsync or Invoke method which will be called by the middleware with HttpContex as first argument
+        public async Task InvokeAsync(HttpContext context)
+        {
+            context.Request.EnableBuffering(); //to allow request stream to be read multiple times
 
-        // After the request is handled, capture the response status code
-        auditLog.StatusCode = context.Response.StatusCode;
+            var auditLog = new AuditLog
+            {
+                Source = context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                Action = $"{context.Request.Method} {context.Request.Path}",
+                TimeStamp = DateTime.UtcNow,
+                UserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            };
+            
+            //read request body
+            using (var reader = new StreamReader(context.Request.Body, leaveOpen: true))
+            {
+                auditLog.RequestDetails = await reader.ReadToEndAsync();
 
-        // Save the audit log to the database
-        var dbContext = context.RequestServices.GetRequiredService<OrchestratorDbContext>();
-        await dbContext.AuditLogs.AddAsync(auditLog);
-        await dbContext.SaveChangesAsync();
+                context.Request.Body.Position = 0; //reset stream possition back to start for next middleware
+            }
+
+            await _next(context);  //call next middleware in pipeline
+
+            //omce all middleware is called and response is generated 
+            auditLog.StatusCode = context.Response.StatusCode;
+
+            //save the auditlog to db 
+            var dbContext = context.RequestServices.GetRequiredService<OrchestratorDbContext>(); // get the db context from servicess added to the app 
+            await dbContext.AuditLogs.AddAsync(auditLog);
+            await dbContext.SaveChangesAsync();
+        }
     }
 }

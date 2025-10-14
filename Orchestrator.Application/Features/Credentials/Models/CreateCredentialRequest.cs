@@ -1,4 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Orchestrator.Application.Features.Credentials.Models
 {
@@ -10,12 +15,12 @@ namespace Orchestrator.Application.Features.Credentials.Models
 
         [MaxLength(500)]
         public string? Description { get; set; }
-
         [Required]
         [MaxLength(255)]
         public required string Username { get; set; }
-
         [Required]
         public required string Secret { get; set; }
+
+        public bool EncryptSecret { get; set; } = true;
     }
 }

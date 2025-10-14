@@ -1,60 +1,64 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.Extensions.Configuration;
+using Orchestrator.Application.Common.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
+using System.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens;
-using Orchestrator.Application.Common.Interfaces;
-
+using System.Reflection.Metadata.Ecma335;
 
 namespace Orchestrator.Infrastructure.Authentication
 {
-    public class JwtTokenGenerator : IJwtTokenGenerator
+    public class JwtTokenGenerator: IJwtTokenGenerator
     {
         private readonly IConfiguration _configuration;
-
         public JwtTokenGenerator(IConfiguration configuration)
         {
             _configuration = configuration;
         }
+
         public string GenerateToken(Guid userId, string username, IEnumerable<string> roles)
         {
-            // 1. Define Claims
-            var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(JwtRegisteredClaimNames.Name, username),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Unique token ID
-        };
+            
+            var claims = new List<Claim> {
+                new (JwtRegisteredClaimNames.Sub, userId.ToString()),
+
+                new (JwtRegisteredClaimNames.Name, username),
+
+                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+
+            };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            // 2. Get settings from configuration
+           
             var secret = _configuration["JwtSettings:Secret"];
             var issuer = _configuration["JwtSettings:Issuer"];
             var audience = _configuration["JwtSettings:Audience"];
             var expiryMinutes = _configuration.GetValue<int>("JwtSettings:ExpiryMinutes");
 
             if (string.IsNullOrEmpty(secret))
-            {
-                throw new InvalidOperationException("JWT secret not configured.");
-            }
+                throw new InvalidOperationException("JWT secret is not configured");
 
-            // 3. Create Signing Key
+            
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // 4. Create Token
+            
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
                 signingCredentials: creds
-            );
+                );
 
-            // 5. Write Token
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        
     }
 }

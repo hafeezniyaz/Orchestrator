@@ -8,7 +8,7 @@ namespace Orchestrator.Application.Features.Roles.Models
 {
     public class RoleDto
     {
-        public Guid Id { get; set; }
+        public Guid RoleId { get; set; }
         public required string Name { get; set; }
     }
 }

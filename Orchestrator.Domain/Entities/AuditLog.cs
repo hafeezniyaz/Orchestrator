@@ -7,17 +7,18 @@ using System.Threading.Tasks;
 
 namespace Orchestrator.Domain.Entities
 {
-    /// <summary>
-    /// Represents an immutable record of an action taken within the API for auditing purposes.
-    /// </summary>
     [Table("TMUSAuditLog")]
-    public class AuditLog : AuditableEntity
+    public class AuditLog : BaseEntity
     {
-        public DateTime Timestamp { get; set; }
+        public DateTime TimeStamp { get; set; }
         public string? UserId { get; set; }
-        public required string Action { get; set; } // e.g., "POST /api/v1/apps"
-        public string? RequestDetails { get; set; } // Can be a JSON representation of the request
-        public required string IpAddress { get; set; }
+
+        public required string Action { get; set; }
+
+        public string? RequestDetails { get; set; }
+
+        public required string Source { get; set; }
+
         public int StatusCode { get; set; }
-    } 
+    }
 }

@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 namespace Orchestrator.Domain.Entities
 {
     /// <summary>
-    /// Represents a single log entry, typically submitted by a client application.
+    /// represents a single log entry 
     /// </summary>
     [Table("TMUSLog")]
     public class Log : AuditableEntity
     {
-        public DateTime Timestamp { get; set; }
-        public required string Source { get; set; }
+        public DateTime TimeStamp { get; set; }
+        public required string  Source { get; set; }
         public required string Level { get; set; }
         public required string Message { get; set; }
         public string? Hostname { get; set; }

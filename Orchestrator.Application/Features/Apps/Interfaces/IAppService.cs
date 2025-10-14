@@ -1,37 +1,37 @@
-﻿using System;
+﻿using Orchestrator.Application.Common.Models;
+using Orchestrator.Application.Features.Apps.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Orchestrator.Application.Common.Models;
-using Orchestrator.Application.Features.Apps.Models;
 
 namespace Orchestrator.Application.Features.Apps.Interfaces
 {
     public interface IAppService
     {
         /// <summary>
-        /// Retrieves a list of all applications.
+        /// retrieve list of apps 
         /// </summary>
-        /// <returns>A list of application DTOs.</returns>
-        Task<PagedResult<AppDto>> GetAllAppsAsync(string? name, bool? isActive, int skip, int top);
+        /// <returns></returns>
+        Task<PagedResult<AppDto>> GetAllAppsAsync(string? name, bool? isActive, int skip=0, int top=50);
 
         /// <summary>
-        /// Retrieves a specific application by its ID.
+        /// get app by its ID
         /// </summary>
-        /// <param name="appId">The unique identifier of the application.</param>
-        /// <returns>The application DTO if found; otherwise, null.</returns>
+        /// <param name="appId"></param>
+        /// <returns></returns>
         Task<AppDto?> GetAppByIdAsync(Guid appId);
 
         /// <summary>
-        /// Creates a new application.
+        /// Create new app
         /// </summary>
-        /// <param request="CreateRequestAppModel">The request object containing the details of the new application.</param>
-        /// <returns>The created application DTO.</returns>
-        Task<AppDto> CreateAppAsync(CreateAppRequest request);
+        /// <param name="request"></param>
+        /// <returns></returns>
+        Task<AppDto?> CreateAppAsync(CreateAppRequest request);
 
         /// <summary>
-        /// update an existing app
+        /// update the app using id
         /// </summary>
         /// <param name="id"></param>
         /// <param name="request"></param>
@@ -39,10 +39,11 @@ namespace Orchestrator.Application.Features.Apps.Interfaces
         Task<AppDto?> UpdateAppAsync(Guid id, UpdateAppRequest request);
 
         /// <summary>
-        /// Delete app by id
+        /// delete app by id
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         Task<bool> DeleteAppAsync(Guid id);
+
     }
 }

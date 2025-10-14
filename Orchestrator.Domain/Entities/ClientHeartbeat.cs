@@ -8,13 +8,15 @@ using System.Threading.Tasks;
 namespace Orchestrator.Domain.Entities
 {
     /// <summary>
-    /// Tracks the status and last seen time of a client machine.
+    /// tracks the status and last seen time of the client machine
     /// </summary>
-    [Table("TMUSClientHeartbeat")]
-    public class ClientHeartbeat : AuditableEntity
+    [Table("TMUSClientHeartbeat")]    
+    
+    public class ClientHeartbeat: AuditableEntity
     {
-        public required string ClientId { get; set; } // A unique identifier for the machine/client
+        public required string ClientID  { get; set; }
         public DateTime LastHeartbeat { get; set; }
         public required string Status { get; set; }
+
     }
 }

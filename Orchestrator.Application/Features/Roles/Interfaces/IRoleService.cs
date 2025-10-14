@@ -10,6 +10,13 @@ namespace Orchestrator.Application.Features.Roles.Interfaces
 {
     public interface IRoleService
     {
-        Task<PagedResult<RoleDto>> GetRolesAsync(string? name, int skip, int top);
+        /// <summary>
+        /// Get all roles
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="skip"></param>
+        /// <param name="top"></param>
+        /// <returns></returns>
+        Task<PagedResult<RoleDto>> GetRolesAsync(string? name, int skip = 0, int top = 50);
     }
 }

@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 namespace Orchestrator.Domain.Entities
 {
     /// <summary>
-    /// Represents a versioned, deployable package associated with an App.
+    /// represents a versioned , deployable package associated with an app
     /// </summary>
     [Table("TMUSPackage")]
-    public class Package : AuditableEntity
+    public class Package: AuditableEntity
     {
         public Guid AppId { get; set; }
         public required string Version { get; set; }
@@ -19,5 +19,6 @@ namespace Orchestrator.Domain.Entities
         public DateTime UploadedDate { get; set; }
         public required string FilePath { get; set; }
         public required string Md5Checksum { get; set; }
+
     }
 }

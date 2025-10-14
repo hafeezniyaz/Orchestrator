@@ -1,17 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Orchestrator.Application.Features.Credentials.Models
 {
     public class UpdateCredentialRequest
     {
-        [MaxLength(500)]
-        public string? Description { get; set; }
 
-        [Required]
-        [MaxLength(255)]
+        public string? Decription { get; set; }
         public required string Username { get; set; }
-
-        [Required]
         public required string Secret { get; set; }
+        public bool EncryptSecret { get; set; } = true;
+
     }
 }

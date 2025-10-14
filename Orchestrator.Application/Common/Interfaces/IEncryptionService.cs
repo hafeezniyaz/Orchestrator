@@ -1,27 +1,25 @@
-﻿namespace Orchestrator.Application.Common.Interfaces
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Orchestrator.Application.Common.Interfaces
 {
-    /// <summary>
-    /// Defines a service for performing strong, authenticated encryption and decryption.
-    /// This contract ensures that secrets are handled securely for data at rest.
-    /// </summary>
     public interface IEncryptionService
     {
         /// <summary>
-        /// Encrypts a plain-text string into a secure format containing the ciphertext,
-        /// initialization vector (nonce), and authentication tag.
+        /// Encrypth the string
         /// </summary>
-        /// <param name="plainText">The string to encrypt.</param>
-        /// <returns>A formatted, encrypted string ready for database storage.</returns>
+        /// <param name="plainText"></param>
+        /// <returns></returns>
         string Encrypt(string plainText);
 
         /// <summary>
-        /// Decrypts a previously encrypted string, verifying its integrity in the process.
+        /// Decrypt the string
         /// </summary>
-        /// <param name="cipherText">The encrypted string from the database.</param>
-        /// <returns>The original plain-text string.</returns>
-        /// <exception cref="System.Security.Cryptography.CryptographicException">
-        /// Thrown if decryption fails, which can indicate tampering or a corrupted value.
-        /// </exception>
-        string Decrypt(string cipherText);
+        /// <param name="cipherText"></param>
+        /// <returns></returns>
+        string Decrypth(string cipherText);
     }
 }

@@ -1,107 +1,107 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Orchestrator.Application.Features.RoleMappings.Interfaces;
 using Orchestrator.Application.Features.RoleMappings.Models;
 using Orchestrator.Domain.Entities;
-using Orchestrator.Infrastructure.Persistence;
+using Orchestrator.Infrastructure.Persistance;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Orchestrator.Infrastructure.Features.RoleMappings.Services
 {
-    public class RoleMappingService : IRoleMappingService
+    public class RoleMappingService : IRoleMappingSevice
     {
-        private readonly OrchestratorDbContext _dbContext;
+        private readonly OrchestratorDbContext _context;
 
-        public RoleMappingService(OrchestratorDbContext dbContext)
+        public RoleMappingService(OrchestratorDbContext context)
         {
-            _dbContext = dbContext;
+            _context = context;
+
         }
 
         public async Task<IEnumerable<string>> FindInvalidRolesAsync(IEnumerable<string> roleNames)
         {
-            var distinctRoleNames = roleNames.Distinct().ToList();
+            var distinctRoles = roleNames.Distinct().ToList();
 
-            var validRoles = await _dbContext.Roles
-                .Where(r => distinctRoleNames.Contains(r.Name))
-                .Select(r => r.Name) // We only need the name for comparison
+            var validRoles = await _context.Roles
+                .Where(r => distinctRoles.Contains(r.Name))
+                .Select(r => r.Name)
                 .ToListAsync();
 
-            return distinctRoleNames.Except(validRoles);
+            return distinctRoles.Except(validRoles);
         }
 
-        public async Task UpdateApiClientRolesAsync(Guid apiClientId, IEnumerable<string> roleNames)
+        public async Task<IEnumerable<ADRoleMappingDto>> GetADRoleMappingsAsync()
         {
-            // 1. Find the roles in the database that match the provided names
-            var rolesToAssign = await _dbContext.Roles
-                .Where(r => roleNames.Contains(r.Name))
-                .ToListAsync();
-
-            // 2. Find all existing mappings for this client
-            var existingMappings = await _dbContext.RoleMappings
-                .Where(rm => rm.ApiClientId == apiClientId)
-                .ToListAsync();
-
-            // 3. Remove the old mappings
-            _dbContext.RoleMappings.RemoveRange(existingMappings);
-
-            // 4. Create the new mappings
-            var newMappings = rolesToAssign.Select(role => new RoleMapping
-            {
-                RoleId = role.Id,
-                ApiClientId = apiClientId
-            });
-
-            // 5. Add the new mappings to the context
-            await _dbContext.RoleMappings.AddRangeAsync(newMappings);
-
-            // 6. Save all changes (deletions and additions) in one transaction
-            await _dbContext.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<ADGroupRoleMappingDto>> GetADGroupRoleMappingsAsync()
-        {
-            return await _dbContext.RoleMappings
+            return await _context.RoleMappings
                 .AsNoTracking()
-                .Where(rm => rm.ADGroup != null)
-                .Select(rm => new ADGroupRoleMappingDto
-                {
-                    ADGroupName = rm.ADGroup!,
-                    RoleName = _dbContext.Roles.First(r => r.Id == rm.RoleId).Name
-                })
+                .Where(rm => rm.AdGroup != null)
+                .Select(rm => new ADRoleMappingDto { ADGroupName = rm.AdGroup!, RoleName = _context.Roles.First(r => r.Id == rm.RoleId).Name })
                 .OrderBy(dto => dto.ADGroupName)
                 .ToListAsync();
         }
 
-        public async Task SetADGroupRoleAsync(string adGroupName, string roleName)
+        public async Task RemoveADGroupRoleAsync(string GroupName)
         {
-            var existingMapping = await _dbContext.RoleMappings
-                .FirstOrDefaultAsync(rm => rm.ADGroup == adGroupName);
+            var existingMapping = await _context.RoleMappings
+                .FirstOrDefaultAsync(rm => rm.AdGroup == GroupName);
 
             if (existingMapping != null)
             {
-                _dbContext.RoleMappings.Remove(existingMapping);
+                _context.RoleMappings.Remove(existingMapping);
+                await _context.SaveChangesAsync();
             }
 
-            var role = await _dbContext.Roles.SingleAsync(r => r.Name == roleName);
+
+        }
+
+        public async Task SetADGroupRoleAsync(string GroupName, string roleName)
+        {
+            var existingMapping = await _context.RoleMappings
+                .FirstOrDefaultAsync(rm => rm.AdGroup == GroupName);
+
+            if (existingMapping != null)
+            {
+                _context.RoleMappings.Remove(existingMapping);
+            }
+
+            var role = await _context.Roles.SingleAsync(r => r.Name == roleName);
 
             var newMapping = new RoleMapping
             {
                 RoleId = role.Id,
-                ADGroup = adGroupName
+                AdGroup = GroupName
             };
 
-            _dbContext.RoleMappings.Add(newMapping);
-            await _dbContext.SaveChangesAsync();
+            _context.RoleMappings.Add(newMapping);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveADGroupRoleAsync(string adGroupName)
+        public async Task UpdateApiClientRolesAsync(Guid apiClient, IEnumerable<string> roleNames)
         {
-            var existingMapping = await _dbContext.RoleMappings
-                .FirstOrDefaultAsync(rm => rm.ADGroup == adGroupName);
 
-            if (existingMapping != null)
+            var roleToAssign = await _context.Roles
+                 .Where(r => roleNames.Contains(r.Name)).ToListAsync();
+
+            var existingMappings = await _context
+                .RoleMappings.Where(r => r.ApiClientId == apiClient)
+                .ToListAsync();
+
+            _context.RoleMappings.RemoveRange(existingMappings);
+
+            var newMappings = roleToAssign.Select(r => new RoleMapping
             {
-                _dbContext.RoleMappings.Remove(existingMapping);
-                await _dbContext.SaveChangesAsync();
-            }
+                ApiClientId = apiClient,
+                RoleId = r.Id
+            });
+
+            await _context.RoleMappings.AddRangeAsync(newMappings);
+
+            await _context.SaveChangesAsync();
+
         }
     }
 }

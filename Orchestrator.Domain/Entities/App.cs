@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 namespace Orchestrator.Domain.Entities
 {
     /// <summary>
-    /// Represents a managed application, which acts as a container for packages.
+    /// Represents a managed application , which acts as a container 
     /// </summary>
-    /// 
 
     [Table("TMUSApp")]
     public class App : AuditableEntity
@@ -20,4 +19,3 @@ namespace Orchestrator.Domain.Entities
         public bool IsActive { get; set; }
     }
 }
- 
